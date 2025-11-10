@@ -2,8 +2,14 @@
 {
   "builds": [
     {
-      "src": "api/**/*.ts",
+      "src": "api/chat.ts",
       "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ]
 }
