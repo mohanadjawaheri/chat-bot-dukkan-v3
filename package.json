@@ -9,7 +9,7 @@
     "build": "echo 'No build step required for the frontend. Vercel handles the backend build.'"
   },
   "dependencies": {
-    "@google/genai": "^0.16.0",
+    "@google/genai": "^0.15.0",
     "@vercel/node": "^3.2.0"
   },
   "devDependencies": {
