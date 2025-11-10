@@ -1,12 +1,12 @@
 
-import { Chat } from '@google/genai';
-
 export type Sender = 'user' | 'bot';
 
 export interface Product {
   name: string;
   price: string;
   imageUrl: string;
+  description?: string;
+  productId?: string;
 }
 
 export interface Action {
@@ -19,7 +19,16 @@ export interface ConfirmationContent {
   actions: Action[];
 }
 
-export type MessageType = 'text' | 'product' | 'product_not_found' | 'order_status' | 'clarification' | 'error' | 'image_request' | 'confirmation';
+export type MessageType = 
+  | 'text' 
+  | 'product' 
+  | 'product_not_found' 
+  | 'order_status' 
+  | 'clarification' 
+  | 'error' 
+  | 'image_request' 
+  | 'confirmation'
+  | 'loading';
 
 export interface ChatMessage {
   id: string;
@@ -27,21 +36,22 @@ export interface ChatMessage {
   type: MessageType;
   content: string | Product | ConfirmationContent;
   timestamp: string;
+  imageUrl?: string;
 }
 
-export interface GeminiResponse {
-    type: MessageType;
-    product?: Product;
-    message?: string;
-    status?: string;
-    confirmation?: ConfirmationContent;
+export interface ApiResponse {
+  text: string;
+  type?: MessageType;
+  product?: Product;
+  confirmation?: ConfirmationContent;
+  error?: string;
 }
 
 export interface UseChatReturn {
   messages: ChatMessage[];
   isLoading: boolean;
   error: string | null;
-  chatSession: Chat | null;
-  handleSendMessage: (text: string, image?: { mimeType: string; data: string }) => Promise<void>;
+  handleSendMessage: (text: string, image?: File) => void;
   handleAction: (payload: string) => void;
+  retryLastMessage: () => void;
 }

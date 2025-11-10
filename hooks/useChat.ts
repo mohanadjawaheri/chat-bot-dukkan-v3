@@ -1,102 +1,126 @@
 
-import { useState, useEffect, useCallback } from 'react';
-import { Chat } from '@google/genai';
-import { ChatMessage, UseChatReturn, GeminiResponse, ConfirmationContent } from '../types';
-import { createChatSession, sendMessage, analyzeImageWithText } from '../services/geminiService';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { ChatMessage, UseChatReturn, ApiResponse } from '../types';
+import { GeminiService } from '../services/geminiService';
 
 export const useChat = (): UseChatReturn => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [chatSession, setChatSession] = useState<Chat | null>(null);
+  
+  // Ref to store the last user message for retry purposes
+  const lastUserMessageForRetry = useRef<{ text: string; image?: File } | null>(null);
 
+  // Initialize with a welcome message
   useEffect(() => {
-    const initializeChat = () => {
-      try {
-        const session = createChatSession();
-        setChatSession(session);
-        const welcomeMessage: ChatMessage = {
-          id: 'welcome-1',
-          sender: 'bot',
-          type: 'text',
-          content: 'أهلاً بيك في دُكّان! آني علي، مساعدك الذكي. شلون أقدر أخدمك اليوم؟ 🌸',
-          timestamp: new Date().toISOString(),
-        };
-        setMessages([welcomeMessage]);
-      } catch (e) {
-        console.error("Failed to initialize chat session:", e);
-        setError("فشل تهيئة المحادثة. يرجى تحديث الصفحة.");
-      }
+    const welcomeMessage: ChatMessage = {
+      id: 'welcome-1',
+      sender: 'bot',
+      type: 'text',
+      content: 'أهلاً بيك في دُكّان! آني علي، مساعدك الذكي. شلون أقدر أخدمك اليوم؟ 🌸',
+      timestamp: new Date().toISOString(),
     };
-    initializeChat();
+    setMessages([welcomeMessage]);
   }, []);
 
-  const addMessage = (message: Omit<ChatMessage, 'id' | 'timestamp'>) => {
-    setMessages(prev => [
-      ...prev,
-      { ...message, id: Date.now().toString(), timestamp: new Date().toISOString() },
-    ]);
-  };
+  // Effect to handle sending a message to the API when a new user message is added
+  useEffect(() => {
+    const lastMessage = messages[messages.length - 1];
+    
+    // Only trigger if the last message is from the user and we're not already processing a request
+    if (lastMessage?.sender === 'user' && !isLoading) {
+      const send = async () => {
+        setIsLoading(true);
+        setError(null);
 
-  const processBotResponse = (response: GeminiResponse) => {
-    if (response.type === 'product' && response.product) {
-      addMessage({ sender: 'bot', type: 'product', content: response.product });
-    } else if (response.type === 'product_not_found' && response.message) {
-      addMessage({ sender: 'bot', type: 'text', content: response.message });
-    } else if (response.type === 'order_status' && response.status) {
-      addMessage({ sender: 'bot', type: 'text', content: response.status });
-    } else if (response.type === 'clarification' && response.message) {
-      addMessage({ sender: 'bot', type: 'text', content: response.message });
-    } else if (response.type === 'text' && response.message) {
-      addMessage({ sender: 'bot', type: 'text', content: response.message });
-    } else if (response.type === 'confirmation' && response.confirmation) {
-      addMessage({ sender: 'bot', type: 'confirmation', content: response.confirmation });
-    } else if (response.type === 'error' && response.message) {
-      addMessage({ sender: 'bot', type: 'error', content: response.message });
-    } else {
-       addMessage({ sender: 'bot', type: 'error', content: "عذراً، ما فهمت رد السيرفر. ممكن تجرب مرة ثانية؟" });
+        const userMessageContent = lastMessage.content as string;
+        const historyForAPI = messages.slice(0, -1); // All messages except the last user message
+        
+        const imageFile = lastUserMessageForRetry.current?.text === userMessageContent 
+            ? lastUserMessageForRetry.current?.image 
+            : undefined;
+
+        try {
+          const response = await GeminiService.sendMessage(userMessageContent, historyForAPI, imageFile);
+          
+          // Add the bot's response to the messages array
+          const botMessage: Omit<ChatMessage, 'id' | 'timestamp'> = 
+            (response.type === 'product' && response.product) ? { sender: 'bot', type: 'product', content: response.product } :
+            (response.type === 'confirmation' && response.confirmation) ? { sender: 'bot', type: 'confirmation', content: response.confirmation } :
+            { sender: 'bot', type: 'text', content: response.text };
+
+          setMessages(prev => [...prev, { ...botMessage, id: `bot-${Date.now()}`, timestamp: new Date().toISOString() }]);
+
+        } catch (err: any) {
+          console.error('[useChat] Error:', err);
+          const errorMessage = err.message?.includes('fetch') || err.message?.includes('HTTP')
+            ? 'عذراً، واجهتني مشكلة بالاتصال. خلي نتأكد من التفاصيل وراجعينلك 🙏'
+            : 'عذراً، حدث خطأ ما. الرجاء المحاولة مرة أخرى.';
+          
+          setError(errorMessage);
+          setMessages(prev => [...prev, { id: `bot-err-${Date.now()}`, sender: 'bot', type: 'error', content: errorMessage, timestamp: new Date().toISOString() }]);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      send();
     }
-  };
+  }, [messages, isLoading]);
 
-  const handleSendMessage = useCallback(async (text: string, image?: { mimeType: string; data: string }) => {
+  // This function now only adds the user's message to the state, triggering the useEffect
+  const handleSendMessage = useCallback((text: string, image?: File) => {
     if (isLoading) return;
 
-    setIsLoading(true);
-    setError(null);
+    const userMessageContent = text || (image ? 'ممكن تشوفلي هذا المنتج؟' : '');
+    if (!userMessageContent.trim() && !image) return;
 
-    const userMessageContent = image ? "ممكن تشوفلي هذا المنتج؟" : text;
-    addMessage({ sender: 'user', type: 'text', content: userMessageContent });
-    
-    // Simulate bot thinking delay
-    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
+    // Store the message content and file for potential retry
+    lastUserMessageForRetry.current = { text: userMessageContent, image };
 
-    try {
-      let botResponse: GeminiResponse;
-      if (image) {
-        const prompt = "حلل هذه الصورة وابحث عن المنتج المطابق في قاعدة بيانات دُكّان. " + text;
-        botResponse = await analyzeImageWithText(image.data, image.mimeType, prompt);
-      } else {
-        if (!chatSession) {
-          throw new Error("Chat session is not initialized.");
-        }
-        botResponse = await sendMessage(chatSession, text);
-      }
-      processBotResponse(botResponse);
-    } catch (e: any) {
-      console.error("Error in handleSendMessage:", e);
-      const errorMessage = "عذراً، واجهتني مشكلة بالاتصال. خلي نتأكد من التفاصيل وراجعينلك 🙏";
-      setError(errorMessage);
-      addMessage({ sender: 'bot', type: 'error', content: errorMessage });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [isLoading, chatSession]);
+    setMessages(prev => [
+      ...prev,
+      {
+        id: `user-${Date.now()}`,
+        sender: 'user',
+        type: 'text',
+        content: userMessageContent,
+        timestamp: new Date().toISOString(),
+        ...(image && { imageUrl: URL.createObjectURL(image) }),
+      },
+    ]);
+  }, [isLoading]);
 
+  // This function is for interactive buttons from the bot
   const handleAction = useCallback((payload: string) => {
     if (payload) {
       handleSendMessage(payload);
     }
   }, [handleSendMessage]);
 
-  return { messages, isLoading, error, chatSession, handleSendMessage, handleAction };
+  // Retry logic now simply reverts state and lets the useEffect handle the resend
+  const retryLastMessage = useCallback(() => {
+    if (lastUserMessageForRetry.current) {
+      const { text, image } = lastUserMessageForRetry.current;
+      
+      // Remove the failed user message and the error bot response
+      setMessages(prev => {
+        const lastUserIndex = prev.map(m => m.sender).lastIndexOf('user');
+        return lastUserIndex !== -1 ? prev.slice(0, lastUserIndex) : prev;
+      });
+
+      // Re-trigger the send message flow by re-adding the user message
+      // This is now the single source of truth for adding a user message
+      handleSendMessage(text, image);
+    }
+  }, [handleSendMessage]);
+
+  return {
+    messages,
+    isLoading,
+    error,
+    handleSendMessage,
+    handleAction,
+    retryLastMessage,
+  };
 };

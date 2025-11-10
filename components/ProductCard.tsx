@@ -18,10 +18,16 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, handleAction }) => {
         src={product.imageUrl}
         alt={product.name}
         className="w-full h-40 object-cover"
+        onError={(e) => {
+          (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300x200?text=No+Image';
+        }}
       />
       <div className="p-4">
         <h3 className="font-bold text-lg text-gray-900 dark:text-white">{product.name}</h3>
-        <p className="text-gray-600 dark:text-gray-300 mt-1">{product.price}</p>
+        {product.description && (
+          <p className="text-sm text-gray-600 dark:text-gray-300 mt-1 line-clamp-2">{product.description}</p>
+        )}
+        <p className="text-purple-600 dark:text-purple-400 font-semibold mt-2">{product.price}</p>
         <button
           type="button"
           onClick={onOrderClick}

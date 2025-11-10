@@ -8,9 +8,10 @@ interface ChatWindowProps {
   messages: ChatMessage[];
   isLoading: boolean;
   handleAction: (payload: string) => void;
+  retryLastMessage: () => void;
 }
 
-const ChatWindow: React.FC<ChatWindowProps> = ({ messages, isLoading, handleAction }) => {
+const ChatWindow: React.FC<ChatWindowProps> = ({ messages, isLoading, handleAction, retryLastMessage }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -22,10 +23,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ messages, isLoading, handleActi
   }, [messages, isLoading]);
 
   return (
-    <div className="flex-1 p-4 sm:p-6 overflow-y-auto scrollbar-thin">
+    <div className="flex-1 p-4 sm:p-6 overflow-y-auto scrollbar-thin bg-gray-50 dark:bg-gray-800/50">
       <div className="flex flex-col space-y-4">
         {messages.map((msg) => (
-          <Message key={msg.id} message={msg} handleAction={handleAction} />
+          <Message key={msg.id} message={msg} handleAction={handleAction} retryLastMessage={retryLastMessage} />
         ))}
         {isLoading && <TypingIndicator />}
         <div ref={messagesEndRef} />

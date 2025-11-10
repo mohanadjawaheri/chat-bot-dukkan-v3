@@ -1,7 +1,7 @@
 
 import React from 'react';
 
-export const SendIcon: React.FC<{ className?: string }> = ({ className }) => (
+export const SendIcon: React.FC<{ className?: string }> = ({ className = "w-5 h-5" }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 24 24"
@@ -13,7 +13,7 @@ export const SendIcon: React.FC<{ className?: string }> = ({ className }) => (
   </svg>
 );
 
-export const AttachmentIcon: React.FC<{ className?: string }> = ({ className }) => (
+export const AttachmentIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-6" }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 24 24"
@@ -29,8 +29,8 @@ export const AttachmentIcon: React.FC<{ className?: string }> = ({ className }) 
   </svg>
 );
 
-export const BotIcon: React.FC<{ className?: string }> = ({ className }) => (
-    <div className={`flex items-center justify-center bg-purple-500 text-white rounded-full ${className}`}>
-        <span className="font-bold text-lg">ع</span>
-    </div>
+export const BotIcon: React.FC<{ className?: string }> = ({ className = "w-8 h-8" }) => (
+  <div className={`flex-shrink-0 flex items-center justify-center bg-purple-500 text-white rounded-full ${className}`}>
+    <span className="font-bold text-lg">ع</span>
+  </div>
 );
