@@ -1,3 +1,7 @@
+export const config = {
+  runtime: 'nodejs18.x',
+};
+
 import { GoogleGenAI, Chat } from '@google/genai';
 
 const SYSTEM_INSTRUCTION = `... (نفس النص الطويل بدون تغيير) ...`;
