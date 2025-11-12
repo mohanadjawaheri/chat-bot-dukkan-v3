@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type } from '@google/genai';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
@@ -63,8 +62,26 @@ const responseSchema = {
   },
 };
 
+// CORS headers - must be set before any response
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS, GET',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+  'Access-Control-Max-Age': '86400',
+};
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Set CORS headers for all responses
+  Object.entries(corsHeaders).forEach(([key, value]) => {
+    res.setHeader(key, value);
+  });
+
+  // Handle preflight OPTIONS request
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  // Only allow POST for actual requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
@@ -98,7 +115,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const botResponseText = result.text;
     
-    // FIX: Check if botResponseText is a valid string before parsing
+    // Check if botResponseText is a valid string before parsing
     if (botResponseText) {
       try {
           const parsedResponse = JSON.parse(botResponseText);
@@ -114,6 +131,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   } catch (error: any) {
     console.error('Error in /api/chat:', error);
-    res.status(500).json({ error: 'Internal Server Error', details: error.message });
+    return res.status(500).json({ error: 'Internal Server Error', details: error.message });
   }
 }
