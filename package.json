@@ -1,18 +1,29 @@
 
 {
-  "name": "dukkan-chatbot-vercel",
+  "name": "dukkan-smart-chatbot",
   "version": "1.0.0",
   "private": true,
-  "description": "Frontend and Backend for the Dukkan Smart Chatbot on Vercel.",
+  "type": "module",
   "scripts": {
-    "dev": "echo 'This is a frontend-only project for local viewing. Run with a static server. The backend is deployed via Vercel.'",
-    "build": "echo 'No build step required for the frontend. Vercel handles the backend build.'"
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
   },
   "dependencies": {
     "@google/genai": "^0.15.0",
-    "@vercel/node": "^3.2.0"
+    "@vercel/node": "^3.2.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@types/node": "^20.14.10"
+    "@types/node": "^20.14.10",
+    "@types/react": "^18.3.1",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.4",
+    "typescript": "^5.5.3",
+    "vite": "^5.4.0"
   }
 }
