@@ -12,9 +12,11 @@ export default defineConfig({
   },
   server: {
     proxy: {
+      // Any request starting with /api will be forwarded to your Vercel deployment
       '/api': {
-        target: 'http://localhost:8000', // Assuming you might run the function locally
+        target: 'https://chat-bot-dukkan-v3.vercel.app', // Your production URL
         changeOrigin: true,
+        // No rewrite needed as the backend path is also /api/chat
       },
     },
   },
