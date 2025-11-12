@@ -98,13 +98,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const botResponseText = result.text;
     
-    // The model should return JSON, but we parse it to be safe
-    try {
-        const parsedResponse = JSON.parse(botResponseText);
-        return res.status(200).json(parsedResponse);
-    } catch (e) {
-        // If parsing fails, send it as a plain text response
-        return res.status(200).json({ type: 'text', text: botResponseText });
+    // FIX: Check if botResponseText is a valid string before parsing
+    if (botResponseText) {
+      try {
+          const parsedResponse = JSON.parse(botResponseText);
+          return res.status(200).json(parsedResponse);
+      } catch (e) {
+          // If parsing fails, send it as a plain text response
+          return res.status(200).json({ type: 'text', text: botResponseText });
+      }
+    } else {
+      // Handle cases where the model returns no text (e.g., blocked response)
+      throw new Error("The AI model returned an empty response.");
     }
 
   } catch (error: any) {
