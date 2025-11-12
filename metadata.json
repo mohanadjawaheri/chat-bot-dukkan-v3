@@ -1,0 +1,8 @@
+
+{
+  "name": "Dukkan Smart Chatbot",
+  "description": "An intelligent chatbot interface for the Dukkan e-commerce platform, allowing users to find products, place orders, and track their status using natural conversation powered by Gemini.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
