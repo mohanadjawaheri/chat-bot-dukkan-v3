@@ -1,4 +1,3 @@
-
 {
   "builds": [
     {
@@ -9,11 +8,7 @@
   "routes": [
     {
       "src": "/api/chat",
-      "headers": {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization"
-      }
+      "dest": "/api/chat.js"
     },
     {
       "src": "/(.*)",
